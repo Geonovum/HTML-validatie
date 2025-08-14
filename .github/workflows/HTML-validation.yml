@@ -1,0 +1,42 @@
+name: HTML Validation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-html:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Download vnu.jar (W3C Validator)
+        run: wget https://github.com/validator/validator/releases/latest/download/vnu.jar
+
+      - name: Run HTML validation
+        run: |
+          mkdir -p reports
+          # HTML-rapport
+          java -jar vnu.jar --errors-only --format html . > reports/report.html || true
+          # Tekstrapport
+          java -jar vnu.jar --errors-only --format text . > reports/report.txt || true
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-validation-report
+          path: reports/
+
+      - name: Fail job if errors found
+        run: |
+          java -jar vnu.jar --errors-only --format text .
