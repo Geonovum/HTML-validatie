@@ -55,8 +55,9 @@ jobs:
         run: |
           java -jar "$JAR_PATH" --errors-only --format text $HTML_FILES
 
-      - name: Validate CSS
-        run: npx stylelint "$CSS_FILES"
+      - name: Validate CSS with stylelint (via npx)
+        run: |
+          npx stylelint "**/*.css" --ignore-pattern "node_modules/**" --allow-empty-input
 
       - name: Check for broken links
         uses: lycheeverse/lychee-action@v1.10.0
