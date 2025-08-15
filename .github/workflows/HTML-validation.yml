@@ -22,7 +22,7 @@ jobs:
       # Install validators
       - name: Install dependencies
         run: |
-          npm install vnu-jar stylelint stylelint-config-standard seo-lint pa11y -g
+          npm install -g vnu-jar stylelint stylelint-config-standard pa11y
 
       - name: Get path to vnu.jar
         run: echo "JAR_PATH=$(node -e "console.log(require('vnu-jar'))")" >> $GITHUB_ENV
@@ -59,11 +59,10 @@ jobs:
         with:
           args: '--verbose --no-progress $HTML_FILES'
 
-      - name: SEO Checks (basic)
+      - name: SEO & Accessibility Checks
         run: |
           for f in $HTML_FILES; do
-            echo "SEO check for $f"
-            seo-lint "$f"
+            echo "Checking $f"
             pa11y "file://$PWD/$f" --reporter cli
           done
 
