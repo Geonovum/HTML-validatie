@@ -20,7 +20,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install vnu-jar stylelint
+        run: npm install vnu-jar stylelint stylelint-config-standard
 
       - name: Get path to vnu.jar
         run: echo "JAR_PATH=$(node -e "console.log(require('vnu-jar'))")" >> $GITHUB_ENV
