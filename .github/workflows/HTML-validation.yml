@@ -31,8 +31,8 @@ jobs:
       - name: Run HTML validation (report)
         run: |
           mkdir -p reports
-          java -jar "$JAR_PATH" --errors-only --format html . > reports/report.html || true
-          java -jar "$JAR_PATH" --errors-only --format text . > reports/report.txt || true
+          java -jar "$JAR_PATH" --errors-only --format html $(find . -type f -name "*.html") > reports/report.html || true
+          java -jar "$JAR_PATH" --errors-only --format text $(find . -type f -name "*.html") > reports/report.txt || true
 
       - name: Upload validation report
         uses: actions/upload-artifact@v4
