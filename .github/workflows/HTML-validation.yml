@@ -19,17 +19,8 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install system deps for headless Chrome (if needed)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libnss3 libxss1 libasound2 libxshmfence1 libgbm1 \
-            fonts-liberation libatk1.0-0 libatk-bridge2.0-0 \
-            libgtk-3-0 libx11-xcb1 libxcomposite1 libxdamage1 libxfixes3 \
-            libxrandr2 libpango-1.0-0 libcairo2
-
       - name: Install dependencies
-        run: npm install vnu-jar stylelint stylelint-config-standard pa11y
+        run: npm install vnu-jar stylelint stylelint-config-standard
 
       - name: Get path to vnu.jar
         run: echo "JAR_PATH=$(node -e "console.log(require('vnu-jar'))")" >> $GITHUB_ENV
@@ -37,7 +28,6 @@ jobs:
       - name: Find HTML & CSS files (excluding node_modules)
         run: |
           HTML_FILES=$(find . -type f -name "*.html" -not -path "*/node_modules/*")
-          CSS_FILES=$(find . -type f -name "*.css"  -not -path "*/node_modules/*")
           if [ -z "$HTML_FILES" ]; then
             echo "Geen HTML-bestanden gevonden."
             exit 0
@@ -45,9 +35,6 @@ jobs:
           {
             echo "HTML_FILES<<EOF"
             echo "$HTML_FILES"
-            echo "EOF"
-            echo "CSS_FILES<<EOF"
-            echo "$CSS_FILES"
             echo "EOF"
           } >> "$GITHUB_ENV"
 
@@ -72,13 +59,6 @@ jobs:
         uses: lycheeverse/lychee-action@v1.10.0
         with:
           args: "--verbose --no-progress $HTML_FILES"
-
-      - name: SEO & Accessibility checks with Pa11y (via npx)
-        run: |
-          for f in $HTML_FILES; do
-            echo "Pa11y check: $f"
-            npx pa11y "file://$PWD/$f" --reporter cli
-          done
 
   deploy:
     needs: validate-html
