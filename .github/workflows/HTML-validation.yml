@@ -20,7 +20,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install vnu-jar stylelint stylelint-config-standard
+        run: npm install vnu-jar stylelint stylelint-config-standard pa11y
 
       - name: Get path to vnu.jar
         run: echo "JAR_PATH=$(node -e "console.log(require('vnu-jar'))")" >> $GITHUB_ENV
@@ -63,6 +63,13 @@ jobs:
         uses: lycheeverse/lychee-action@v1.10.0
         with:
           args: "--verbose --no-progress $HTML_FILES"
+
+      - name: SEO & Accessibility checks with Pa11y (via npx)
+        run: |
+          for f in $HTML_FILES; do
+            echo "Pa11y check: $f"
+            npx pa11y "file://$PWD/$f" --reporter cli
+          done
 
   deploy:
     needs: validate-html
