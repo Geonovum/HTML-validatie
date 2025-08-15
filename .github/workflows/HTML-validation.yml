@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  validate-html:
+  validate-site:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,21 +19,24 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install vnu-jar via npm
-        run: npm install vnu-jar
+      # Install validators
+      - name: Install dependencies
+        run: |
+          npm install vnu-jar stylelint stylelint-config-standard seo-lint pa11y -g
 
       - name: Get path to vnu.jar
         run: echo "JAR_PATH=$(node -e "console.log(require('vnu-jar'))")" >> $GITHUB_ENV
 
-      - name: Find HTML files
+      - name: Find HTML & CSS files
         run: |
           HTML_FILES=$(find . -type f -name "*.html")
-          if [ -z "$HTML_FILES" ]; then
-            echo "Geen HTML-bestanden gevonden."
-            exit 0
-          fi
+          CSS_FILES=$(find . -type f -name "*.css")
+          if [ -z "$HTML_FILES" ]; then echo "Geen HTML-bestanden gevonden."; exit 0; fi
           echo "HTML_FILES<<EOF" >> $GITHUB_ENV
           echo "$HTML_FILES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          echo "CSS_FILES<<EOF" >> $GITHUB_ENV
+          echo "$CSS_FILES" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Convert HTML files to UTF-8
@@ -46,16 +49,26 @@ jobs:
           done
 
       - name: Validate HTML
-        run: |
-          java -jar "$JAR_PATH" --errors-only --format text $HTML_FILES
+        run: java -jar "$JAR_PATH" --errors-only --format text $HTML_FILES
 
-      - name: Install lychee
+      - name: Validate CSS
+        run: stylelint "$CSS_FILES"
+
+      - name: Check for broken links
         uses: lycheeverse/lychee-action@v1.10.0
         with:
           args: '--verbose --no-progress $HTML_FILES'
 
+      - name: SEO Checks (basic)
+        run: |
+          for f in $HTML_FILES; do
+            echo "SEO check for $f"
+            seo-lint "$f"
+            pa11y "file://$PWD/$f" --reporter cli
+          done
+
   deploy:
-    needs: validate-html
+    needs: validate-site
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' }}
     steps:
@@ -66,4 +79,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .
+          publish_dir: ./dist
