@@ -52,7 +52,7 @@ jobs:
           java -jar "$JAR_PATH" --errors-only --format text $HTML_FILES
 
       - name: Validate CSS
-        run: stylelint "$CSS_FILES"
+        run: npx stylelint "$CSS_FILES"
 
       - name: Check for broken links
         uses: lycheeverse/lychee-action@v1.10.0
