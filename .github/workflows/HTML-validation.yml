@@ -19,13 +19,13 @@ jobs:
         with:
           node-version: '20'
 
-      # Install validators
       - name: Install dependencies
         run: |
-          npm install -g vnu-jar stylelint stylelint-config-standard pa11y
+          npm install -g stylelint stylelint-config-standard pa11y
 
-      - name: Get path to vnu.jar
-        run: echo "JAR_PATH=$(node -e "console.log(require('vnu-jar'))")" >> $GITHUB_ENV
+      - name: Download vnu.jar
+        run: |
+          curl -L -o vnu.jar https://github.com/validator/validator/releases/latest/download/vnu.jar
 
       - name: Find HTML & CSS files
         run: |
@@ -49,7 +49,7 @@ jobs:
           done
 
       - name: Validate HTML
-        run: java -jar "$JAR_PATH" --errors-only --format text $HTML_FILES
+        run: java -jar vnu.jar --errors-only --format text $HTML_FILES
 
       - name: Validate CSS
         run: stylelint "$CSS_FILES"
@@ -78,4 +78,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          publish_dir: .
