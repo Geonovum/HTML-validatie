@@ -14,24 +14,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          node-version: '20'
 
       - name: Install vnu-jar via npm
         run: npm install vnu-jar
 
       - name: Path to vnu.jar
         id: vnu
-        run: echo "::set-output name=jar_path::$(node -e "console.log(require('vnu-jar'))")"
-
-      - name: Run HTML validation
         run: |
-            mkdir -p reports
-            java -jar "${{ steps.vnu.outputs.jar_path }}" --errors-only --format html . > reports/report.html || true
-            java -jar "${{ steps.vnu.outputs.jar_path }}" --errors-only --format text . > reports/report.txt || true
+          JAR_PATH=$(node -e "console.log(require('vnu-jar'))")
+          echo "JAR_PATH=$JAR_PATH" >> $GITHUB_ENV
+
+      - name: Run HTML validation (report)
+        run: |
+          mkdir -p reports
+          java -jar "$JAR_PATH" --errors-only --format html . > reports/report.html || true
+          java -jar "$JAR_PATH" --errors-only --format text . > reports/report.txt || true
 
       - name: Upload validation report
         uses: actions/upload-artifact@v4
@@ -40,5 +41,4 @@ jobs:
           path: reports/
 
       - name: Fail job if errors found
-        run: |
-          java -jar vnu.jar --errors-only --format text .
+        run: java -jar "$JAR_PATH" --errors-only --format text .
