@@ -26,7 +26,6 @@ jobs:
         run: echo "JAR_PATH=$(node -e "console.log(require('vnu-jar'))")" >> $GITHUB_ENV
 
       - name: Find HTML files
-        id: find_html
         run: |
           HTML_FILES=$(find . -type f -name "*.html")
           if [ -z "$HTML_FILES" ]; then
@@ -50,10 +49,15 @@ jobs:
         run: |
           java -jar "$JAR_PATH" --errors-only --format text $HTML_FILES
 
+      - name: Install lychee
+        uses: lycheeverse/lychee-action@v1.10.0
+        with:
+          args: '--verbose --no-progress $HTML_FILES'
+
   deploy:
     needs: validate-html
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' }} # Alleen bij push, niet bij PR
+    if: ${{ github.event_name == 'push' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
