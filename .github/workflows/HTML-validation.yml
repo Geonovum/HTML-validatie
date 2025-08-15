@@ -1,4 +1,4 @@
-name: HTML Validation
+name: Validate and Deploy
 
 on:
   push:
@@ -22,23 +22,44 @@ jobs:
       - name: Install vnu-jar via npm
         run: npm install vnu-jar
 
-      - name: Path to vnu.jar
-        id: vnu
-        run: |
-          JAR_PATH=$(node -e "console.log(require('vnu-jar'))")
-          echo "JAR_PATH=$JAR_PATH" >> $GITHUB_ENV
+      - name: Get path to vnu.jar
+        run: echo "JAR_PATH=$(node -e "console.log(require('vnu-jar'))")" >> $GITHUB_ENV
 
-      - name: Run HTML validation (report)
+      - name: Find HTML files
+        id: find_html
         run: |
-          mkdir -p reports
-          java -jar "$JAR_PATH" --errors-only --format html $(find . -type f -name "*.html") > reports/report.html || true
-          java -jar "$JAR_PATH" --errors-only --format text $(find . -type f -name "*.html") > reports/report.txt || true
+          HTML_FILES=$(find . -type f -name "*.html")
+          if [ -z "$HTML_FILES" ]; then
+            echo "Geen HTML-bestanden gevonden."
+            exit 0
+          fi
+          echo "HTML_FILES<<EOF" >> $GITHUB_ENV
+          echo "$HTML_FILES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      - name: Upload validation report
-        uses: actions/upload-artifact@v4
+      - name: Convert HTML files to UTF-8
+        run: |
+          for f in $HTML_FILES; do
+            if file -i "$f" | grep -vq 'charset=utf-8'; then
+              echo "Converting $f to UTF-8"
+              iconv -f WINDOWS-1252 -t UTF-8 "$f" -o "$f".utf8 && mv "$f".utf8 "$f"
+            fi
+          done
+
+      - name: Validate HTML
+        run: |
+          java -jar "$JAR_PATH" --errors-only --format text $HTML_FILES
+
+  deploy:
+    needs: validate-html
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }} # Alleen bij push, niet bij PR
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          name: html-validation-report
-          path: reports/
-
-      - name: Fail job if errors found
-        run: java -jar "$JAR_PATH" --errors-only --format text .
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
